@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Game Sales Analytics Dashboard</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+        header {
+            background-color: #4a69bd;
+            color: white;
+            padding: 20px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        h1 {
+            margin: 0;
+            font-size: 28px;
+        }
+        .dashboard-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            grid-gap: 20px;
+        }
+        .card {
+            background: white;
+            border-radius: 5px;
+            padding: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .card h2 {
+            margin-top: 0;
+            color: #4a69bd;
+            font-size: 20px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        table th, table td {
+            padding: 8px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        #reports-list {
+            list-style: none;
+            padding: 0;
+        }
+        #reports-list li {
+            margin-bottom: 10px;
+            padding: 10px;
+            background-color: #f1f2f6;
+            border-radius: 4px;
+        }
+        #reports-list a {
+            color: #4a69bd;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        #reports-list a:hover {
+            text-decoration: underline;
+        }
+        .loading {
+            text-align: center;
+            padding: 20px;
+            font-style: italic;
+            color: #999;
+        }
+        .timestamp {
+            font-size: 0.8em;
+            color: #666;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Video Game Sales Analytics Dashboard</h1>
+        <p>Cloud-based CSV processing engine</p>
+    </header>
+
+    <div class="dashboard-container">
+        <div class="card">
+            <h2>Recent Reports</h2>
+            <div id="reports-container">
+                <p class="loading">Loading reports...</p>
+                <ul id="reports-list"></ul>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h2>Processing Statistics</h2>
+            <div id="stats-container">
+                <p class="loading">Loading statistics...</p>
+                <div id="stats-content"></div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h2>Top Genres</h2>
+            <div id="genres-container">
+                <p class="loading">Loading genre data...</p>
+                <table id="genres-table">
+                    <thead>
+                        <tr>
+                            <th>Genre</th>
+                            <th>Count</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h2>Top Platforms</h2>
+            <div id="platforms-container">
+                <p class="loading">Loading platform data...</p>
+                <table id="platforms-table">
+                    <thead>
+                        <tr>
+                            <th>Platform</th>
+                            <th>Count</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Replace the mock functions with these real API calls
+
+        async function fetchReportsList() {
+            try {
+                // First try the root location
+                const response = await fetch('dashboard-data.json');
+                const data = await response.json();
+                return data.reports;
+            } catch (error) {
+                // If that fails, try the dashboard subdirectory
+                console.log("Trying alternative path for reports list...");
+                const response = await fetch('dashboard/dashboard-data.json');
+                const data = await response.json();
+                return data.reports;
+            }
+        }
+
+        async function fetchSampleReport() {
+            try {
+                // First try the root location
+                const response = await fetch('dashboard-data.json');
+                const data = await response.json();
+                return data.latest_stats;
+            } catch (error) {
+                // If that fails, try the dashboard subdirectory
+                console.log("Trying alternative path for sample report...");
+                const response = await fetch('dashboard/dashboard-data.json');
+                const data = await response.json();
+                return data.latest_stats;
+            }
+        }
+
+        // Populate the reports list
+        async function populateReportsList() {
+            const reports = await fetchReportsList();
+            const container = document.getElementById('reports-container');
+            const list = document.getElementById('reports-list');
+            
+            // Clear loading message
+            container.querySelector('.loading').style.display = 'none';
+            
+            reports.forEach(report => {
+                const li = document.createElement('li');
+                const link = document.createElement('a');
+                const timestamp = document.createElement('div');
+                
+                link.href = report.url;
+                link.textContent = `Report: ${report.reportId}`;
+                timestamp.className = 'timestamp';
+                timestamp.textContent = new Date(report.timestamp).toLocaleString();
+                
+                li.appendChild(link);
+                li.appendChild(timestamp);
+                list.appendChild(li);
+            });
+        }
+
+        // Populate statistics
+        async function populateStatistics() {
+            const data = await fetchSampleReport();
+            const container = document.getElementById('stats-container');
+            const content = document.getElementById('stats-content');
+            
+            // Clear loading message
+            container.querySelector('.loading').style.display = 'none';
+            
+            content.innerHTML = `
+                <p><strong>Games Processed:</strong> ${data.rows_processed.toLocaleString()}</p>
+                <p><strong>Total Global Sales:</strong> $${data.total_global_sales.toLocaleString()} million</p>
+                <p><strong>Average Sales Per Game:</strong> $${data.average_sales.toFixed(2)} million</p>
+                <p><strong>Unique Publishers:</strong> ${data.unique_publishers}</p>
+            `;
+        }
+
+        // Populate genres table
+        async function populateGenres() {
+            const data = await fetchSampleReport();
+            const container = document.getElementById('genres-container');
+            const table = document.getElementById('genres-table').querySelector('tbody');
+            
+            // Clear loading message
+            container.querySelector('.loading').style.display = 'none';
+            
+            data.top_genres.forEach(genre => {
+                const row = document.createElement('tr');
+                
+                const nameCell = document.createElement('td');
+                nameCell.textContent = genre[0];
+                
+                const countCell = document.createElement('td');
+                countCell.textContent = genre[1].toLocaleString();
+                
+                row.appendChild(nameCell);
+                row.appendChild(countCell);
+                table.appendChild(row);
+            });
+        }
+
+        // Populate platforms table
+        async function populatePlatforms() {
+            const data = await fetchSampleReport();
+            const container = document.getElementById('platforms-container');
+            const table = document.getElementById('platforms-table').querySelector('tbody');
+            
+            // Clear loading message
+            container.querySelector('.loading').style.display = 'none';
+            
+            data.top_platforms.forEach(platform => {
+                const row = document.createElement('tr');
+                
+                const nameCell = document.createElement('td');
+                nameCell.textContent = platform[0];
+                
+                const countCell = document.createElement('td');
+                countCell.textContent = platform[1].toLocaleString();
+                
+                row.appendChild(nameCell);
+                row.appendChild(countCell);
+                table.appendChild(row);
+            });
+        }
+
+        async function fetchDashboardData() {
+            try {
+                // First try the root location
+                const response = await fetch('dashboard-data.json');
+                return await response.json();
+            } catch (error) {
+                // If that fails, try the dashboard subdirectory
+                console.log("Trying alternative path for dashboard data...");
+                const response = await fetch('dashboard/dashboard-data.json');
+                return await response.json();
+            }
+        }
+
+        // Initialize the dashboard
+        window.onload = function() {
+            populateReportsList();
+            populateStatistics();
+            populateGenres();
+            populatePlatforms();
+        };
+    </script>
+</body>
+</html>
